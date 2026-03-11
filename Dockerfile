@@ -1,18 +1,17 @@
-# Sử dụng bản PHP chính thức, nhẹ và bảo mật
-FROM php:8.2-cli
+FROM php:8.2-apache
 
-# Cài đặt các thư viện cần thiết để đọc repo (SSL, Curl)
-RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    libcurl4-openssl-dev \
-    pkg-config \
-    && docker-php-ext-install bcmath
+# Cài đặt cURL mở rộng
+RUN apt-get update && apt-get install -y libcurl4-openssl-dev pkg-config \
+    && docker-php-ext-install curl
 
-# Copy file index.php từ GitHub vào trong Docker
-COPY index.php /app/index.php
+# Thiết lập giới hạn RAM trực tiếp vào cấu hình PHP
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory.ini
 
-# Đặt thư mục làm việc
-WORKDIR /app
+COPY index.php /var/www/html/index.php
 
-# Chạy server PHP khi Docker khởi động
-CMD ["php", "-S", "0.0.0.0:80", "index.php"]
+# Cho phép ghi file cache
+RUN touch /var/www/html/repo_cache.json && chmod 777 /var/www/html/repo_cache.json
+
+WORKDIR /var/www/html
+EXPOSE 80
+CMD ["apache2-foreground"]
